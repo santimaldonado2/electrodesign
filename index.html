@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Software de Diseño Eléctrico Profesional - Casa SM</title>
+    <style>
+        :root {
+            --primary: #3498db;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --warning: #f1c40f;
+            --dark: #2c3e50;
+            --secondary: #9b59b6;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            background-color: #f5f6fa;
+            overflow: hidden;
+        }
+
+        /* PANEL LATERAL */
+        #sidebar {
+            width: 360px;
+            background-color: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .header {
+            padding: 15px 20px;
+            background-color: var(--dark);
+            color: white;
+        }
+        .header h2 { margin: 0; font-size: 1.2rem; }
+        .header p { margin: 3px 0 0 0; font-size: 0.8rem; opacity: 0.8; }
+
+        .section-box {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .list-title { font-weight: bold; margin-bottom: 6px; color: #555; font-size: 0.8rem; display: block; }
+
+        /* CREACIÓN DE CIRCUITO */
+        .circuit-creator { display: flex; gap: 5px; margin-bottom: 8px; }
+        #new-circuit-num { width: 45px; text-align: center; padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
+        #new-circuit-name { flex: 1; padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
+        
+        .btn-add {
+            background-color: var(--dark); color: white; border: none;
+            padding: 6px 10px; border-radius: 4px; cursor: pointer; font-weight: bold;
+        }
+
+        #circuit-select {
+            width: 100%; padding: 7px; border-radius: 4px; border: 1px solid #ccc;
+            margin-bottom: 8px; font-weight: bold; background-color: #f9f9f9;
+        }
+
+        .modes-row { display: flex; gap: 6px; margin-bottom: 6px; }
+
+        .btn {
+            flex: 1; padding: 8px; border: none; border-radius: 5px;
+            cursor: pointer; font-weight: bold; transition: all 0.2s; font-size: 0.8rem; text-align: center;
+        }
+        .btn-mode { background-color: #e0e0e0; color: #333; }
+        .btn-mode.active { background-color: var(--primary); color: white; }
+        
+        #btn-simular { background-color: #e0e0e0; width: 100%; font-size: 0.95rem; padding: 10px;}
+        #btn-simular.active { background-color: var(--success); color: white; }
+
+        #light-subtypes {
+            width: 100%; padding: 6px; border-radius: 4px; border: 1px solid var(--primary); background: #f0f8ff; font-weight: 500; font-size: 0.8rem;
+        }
+
+        /* GESTIÓN DE CAJAS */
+        .box-builder { display: flex; flex-direction: column; gap: 5px; background: #f1f2f6; padding: 8px; border-radius: 6px; }
+        .box-builder select { width: 100%; padding: 5px; font-size: 0.8rem; border-radius: 4px; border: 1px solid #ccc; }
+        .btn-box-action { background-color: var(--secondary); color: white; border: none; padding: 6px; font-weight: bold; border-radius: 4px; cursor: pointer; font-size: 0.75rem; text-align: center; }
+
+        /* BOTONES DE ARCHIVO */
+        .file-buttons { display: flex; gap: 6px; }
+        .btn-file { font-size: 0.75rem; padding: 6px; background-color: #fff; border: 1px solid #ced4da; border-radius: 4px; font-weight: 600; cursor: pointer; flex: 1; text-align: center; }
+        .btn-file:hover { background-color: #e4e7eb; }
+
+        .list-container { flex: 1; padding: 15px; overflow-y: auto; }
+        .item-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 10px; background: #f8f9fa; border-radius: 6px;
+            margin-bottom: 6px; border-left: 4px solid var(--primary); font-size: 0.85rem;
+        }
+
+        .switch-toggle { position: relative; display: inline-block; width: 38px; height: 18px; }
+        .switch-toggle input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .2s; border-radius: 18px; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 2px; bottom: 2px; background-color: white; transition: .2s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--success); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* AREA DEL PLANO */
+        #canvas-area { flex: 1; position: relative; overflow: auto; padding: 20px; display: flex; align-items: flex-start; justify-content: flex-start; }
+        #plano-wrapper { position: relative; box-shadow: 0 4px 20px rgba(0,0,0,0.15); border-radius: 4px; }
+        #imagen-plano { display: block; max-width: 1400px; height: auto; user-select: none; -webkit-user-drag: none; }
+
+        /* COMPONENTES DINÁMICOS */
+        .node { position: absolute; transform: translate(-50%, -50%); z-index: 5; cursor: grab; user-select: none; }
+        .node:active { cursor: grabbing; }
+
+        /* TIPOS DE LUZ */
+        .node-luz-comun { width: 16px; height: 16px; background-color: #7f8c8d; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+        .node-luz-comun.on { background-color: var(--warning); box-shadow: 0 0 16px 7px rgba(241, 196, 15, 0.75); }
+
+        .node-luz-reflector { width: 18px; height: 18px; background-color: #34495e; border: 2px solid #fff; border-radius: 3px; box-shadow: 0 2px 5px rgba(0,0,0,0.4); }
+        .node-luz-reflector.on { background-color: #f39c12; box-shadow: 0 0 22px 10px rgba(243, 156, 18, 0.7); }
+
+        .node-luz-tira-h { width: 55px; height: 6px; background-color: #bdc3c7; border: 1.5px solid #fff; border-radius: 2px; }
+        .node-luz-tira-h.on { background-color: #fffde7; border-color: var(--warning); box-shadow: 0 0 14px 5px rgba(241, 196, 15, 0.6); }
+
+        .node-luz-tira-v { width: 6px; height: 55px; background-color: #bdc3c7; border: 1.5px solid #fff; border-radius: 2px; }
+        .node-luz-tira-v.on { background-color: #fffde7; border-color: var(--warning); box-shadow: 0 0 14px 5px rgba(241, 196, 15, 0.6); }
+
+        /* INTERRUPTOR INDIVIDUAL STANDARD */
+        .node-interruptor { width: 11px; height: 11px; background-color: var(--dark); border: 1.5px solid #fff; border-radius: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+        .node-interruptor.on { background-color: var(--success); }
+
+        /* NUEVA CAJA COMPACTA VERTICAL (ESTILO COMPACTO REAL CON FRANJAS RECTANGULARES) */
+        .node-caja-unificada {
+            display: flex; flex-direction: column; gap: 1px; padding: 1px; background-color: #444;
+            border: 1.5px solid #fff; border-radius: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.35);
+            align-items: stretch; justify-content: center; width: 10px; min-height: 14px;
+        }
+        /* Franjas o teclas más angostas */
+        .modulo-tecla {
+            height: 7px; background-color: var(--dark); transition: background-color 0.15s; border-radius: 0.5px;
+        }
+        .modulo-tecla.on { background-color: var(--success); }
+
+        .node:hover { transform: translate(-50%, -50%) scale(1.15); }
+        .node-label {
+            position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 4px;
+            background: rgba(0,0,0,0.75); color: white; font-size: 8px; padding: 1px 4px; border-radius: 3px; white-space: nowrap; pointer-events: none;
+        }
+        .node-luz-tira-v .node-label { top: auto; bottom: 100%; margin-bottom: 4px; }
+        .ayuda-texto { font-size: 10px; color: #7f8c8d; margin-top: 4px; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div id="sidebar">
+        <div class="header">
+            <h2>Circuitos Casa-SM</h2>
+            <p>Ingeniería de Red Eléctrica</p>
+        </div>
+
+        <div class="section-box" id="setup-section">
+            <span class="list-title">1. SELECCIONAR CIRCUITO</span>
+            <div class="circuit-creator">
+                <input type="text" id="new-circuit-num" placeholder="N°" value="1">
+                <input type="text" id="new-circuit-name" placeholder="Nombre">
+                <button class="btn-add" onclick="createCircuit()">+</button>
+            </div>
+            <select id="circuit-select" onchange="updateCircuitSelection()"></select>
+
+            <span class="list-title" style="margin-top:5px;">2. HERRAMIENTA</span>
+            <div class="modes-row">
+                <button id="btn-mode-luz" class="btn btn-mode active" onclick="setMode('luz')">💡 Luz</button>
+                <button id="btn-mode-int" class="btn btn-mode" onclick="setMode('int')">🎛️ Interruptor</button>
+            </div>
+
+            <div id="light-type-container">
+                <select id="light-subtypes">
+                    <option value="comun">💡 Luz Común (Circular)</option>
+                    <option value="reflector">🔳 Reflector (Cuadrado)</option>
+                    <option value="tira-h">➖ Tira LED Horizontal</option>
+                    <option value="tira-v">🪟 Tira LED Vertical</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="section-box" id="box-manager-section">
+            <span class="list-title">3. GESTIONAR CAJAS DE PARED</span>
+            <div class="box-builder">
+                <select id="select-caja-int" multiple size="3" style="height:55px;"></select>
+                <button class="btn-box-action" onclick="unificarEnCaja()">📦 Unificar Seleccionados en Caja</button>
+            </div>
+            <div class="ayuda-texto">Click izquierdo normal arrastra. Click derecho desarma la caja.</div>
+        </div>
+
+        <div class="section-box">
+            <span class="list-title">4. CONTROL DE ENERGÍA</span>
+            <button id="btn-simular" class="btn" onclick="toggleSimulation()">⚡ ACTIVAR SIMULACIÓN</button>
+        </div>
+
+        <div class="section-box">
+            <div class="file-buttons">
+                <button class="btn-file" onclick="exportarProyecto()">💾 Guardar JSON</button>
+                <button class="btn-file" onclick="document.getElementById('import-input').click()">📂 Cargar JSON</button>
+            </div>
+            <input type="file" id="import-input" accept=".json" style="display:none;" onchange="importarProyecto(event)">
+        </div>
+
+        <div class="list-container"><div id="elements-list"></div></div>
+    </div>
+
+    <div id="canvas-area">
+        <div id="plano-wrapper">
+            <img id="imagen-plano" src="image_0b9313.jpg" alt="Plano">
+            <div id="nodes-container"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = 'luz'; let isSimulation = false; let selectedCircuitId = null;
+        let circuitos = [{ id: "c_init", num: "1", name: "Circuito General", state: false, luces: [], interruptores: [] }];
+        let cajasUnificadas = []; 
+        let countLuz = 1; let countInt = 1;
+        let draggedElement = null; let draggedData = null;
+
+        const wrapper = document.getElementById('plano-wrapper');
+        const container = document.getElementById('nodes-container');
+        const listContainer = document.getElementById('elements-list');
+        const selectMenu = document.getElementById('circuit-select');
+        const lightTypeContainer = document.getElementById('light-type-container');
+        const lightSubtypes = document.getElementById('light-subtypes');
+        const selectCajaInt = document.getElementById('select-caja-int');
+
+        window.onload = () => { selectedCircuitId = circuitos[0].id; rebuildSelectMenu(); render(); setupDragEvents(); };
+
+        function createCircuit() {
+            const numInput = document.getElementById('new-circuit-num'); const nameInput = document.getElementById('new-circuit-name');
+            const num = numInput.value.trim(); const name = nameInput.value.trim();
+            if(!name || !num) return;
+            const newId = 'c_' + Date.now();
+            circuitos.push({ id: newId, num: num, name: name, state: false, luces: [], interruptores: [] });
+            selectedCircuitId = newId;
+            nameInput.value = ''; if(!isNaN(num)) numInput.value = parseInt(num) + 1;
+            rebuildSelectMenu(); render();
+        }
+
+        function rebuildSelectMenu() {
+            selectMenu.innerHTML = '';
+            circuitos.sort((a,b) => a.num.localeCompare(b.num, undefined, {numeric: true}));
+            circuitos.forEach(c => {
+                const opt = document.createElement('option'); opt.value = c.id; opt.innerText = `[C${c.num}] - ${c.name}`;
+                if(c.id === selectedCircuitId) opt.selected = true;
+                selectMenu.appendChild(opt);
+            });
+        }
+
+        function updateCircuitSelection() { selectedCircuitId = selectMenu.value; }
+        function setMode(mode) { if(isSimulation) return; currentMode = mode; document.querySelectorAll('.btn-mode').forEach(b => b.classList.remove('active')); document.getElementById(`btn-mode-${mode}`).classList.add('active'); lightTypeContainer.style.display = (mode === 'luz') ? 'block' : 'none'; }
+
+        function toggleSimulation() {
+            isSimulation = !isSimulation;
+            const btn = document.getElementById('btn-simular');
+            document.getElementById('setup-section').style.opacity = isSimulation ? 0.3 : 1;
+            document.getElementById('setup-section').style.pointerEvents = isSimulation ? 'none' : 'all';
+            document.getElementById('box-manager-section').style.opacity = isSimulation ? 0.3 : 1;
+            document.getElementById('box-manager-section').style.pointerEvents = isSimulation ? 'none' : 'all';
+            if(isSimulation) { btn.classList.add('active'); btn.innerText = "🟢 SIMULACIÓN EN VIVO"; } 
+            else { btn.classList.remove('active'); btn.innerText = "⚡ ACTIVAR SIMULACIÓN"; circuitos.forEach(c => c.state = false); }
+            render();
+        }
+
+        wrapper.addEventListener('click', function(e) {
+            if (isSimulation) return;
+            if (e.target !== document.getElementById('imagen-plano') && e.target !== container) return;
+            const rect = wrapper.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+            const circ = circuitos.find(c => c.id === selectedCircuitId); if(!circ) return;
+
+            if (currentMode === 'luz') {
+                circ.luces.push({ id: 'L' + countLuz++, subtype: lightSubtypes.value, x, y });
+            } else {
+                circ.interruptores.push({ id: 'Sw' + countInt++, x, y });
+            }
+            render();
+        });
+
+        function deleteElement(e, type, circuitId, index, id) {
+            e.preventDefault(); if(isSimulation) return;
+            const circ = circuitos.find(c => c.id === circuitId); if(!circ) return;
+            if(type === 'luz') { circ.luces.splice(index, 1); } 
+            else { 
+                circ.interruptores.splice(index, 1);
+                cajasUnificadas.forEach(box => { box.interruptorIds = box.interruptorIds.filter(iId => iId !== id); });
+                cajasUnificadas = cajasUnificadas.filter(box => box.interruptorIds.length > 0);
+            }
+            render();
+        }
+
+        // NUEVA FUNCIÓN: DESARMAR CAJA CON CLICK DERECHO
+        function desarmarCaja(e, boxId) {
+            e.preventDefault(); if(isSimulation) return;
+            // Al remover la caja de la lista, los interruptores recuperan su estado "sueltos" automáticamente en el render
+            cajasUnificadas = cajasUnificadas.filter(box => box.id !== boxId);
+            render();
+        }
+
+        function unificarEnCaja() {
+            const selectedOptions = Array.from(selectCajaInt.selectedOptions).map(o => o.value);
+            if(selectedOptions.length < 1 || selectedOptions.length > 3) { alert("Selecciona de 1 a 3 interruptores usando CTRL+Clic."); return; }
+            
+            cajasUnificadas.forEach(box => { box.interruptorIds = box.interruptorIds.filter(id => !selectedOptions.includes(id)); });
+            cajasUnificadas = cajasUnificadas.filter(box => box.interruptorIds.length > 0);
+
+            let sumX = 0, sumY = 0, count = 0;
+            circuitos.forEach(c => {
+                c.interruptores.forEach(intr => {
+                    if(selectedOptions.includes(intr.id)) { sumX += intr.x; sumY += intr.y; count++; }
+                });
+            });
+
+            if(count > 0) {
+                cajasUnificadas.push({ id: 'Box_' + Date.now(), x: sumX/count, y: sumY/count, interruptorIds: selectedOptions });
+                render();
+            }
+        }
+
+        function handleCircuitToggle(circuitId, state) {
+            const circ = circuitos.find(c => c.id === circuitId); if(circ) { circ.state = state; render(); }
+        }
+
+        function triggerCircuitClick(circuitId) { if(isSimulation) handleCircuitToggle(circuitId, !circuitos.find(c => c.id === circuitId).state); }
+
+        function setupDragEvents() {
+            document.addEventListener('mousemove', (e) => {
+                if (!draggedElement || isSimulation) return;
+                const rect = wrapper.getBoundingClientRect();
+                let x = ((e.clientX - rect.left) / rect.width) * 100; let y = ((e.clientY - rect.top) / rect.height) * 100;
+                x = Math.max(0, Math.min(100, x)); y = Math.max(0, Math.min(100, y));
+                draggedElement.style.left = `${x}%`; draggedElement.style.top = `${y}%`;
+
+                if(draggedData.type === 'box') {
+                    const box = cajasUnificadas.find(b => b.id === draggedData.id);
+                    if(box) { box.x = x; box.y = y; }
+                } else {
+                    const circ = circuitos.find(c => c.id === draggedData.circuitId);
+                    if(circ) {
+                        if(draggedData.type === 'luz') { circ.luces[draggedData.index].x = x; circ.luces[draggedData.index].y = y; }
+                        else { circ.interruptores[draggedData.index].x = x; circ.interruptores[draggedData.index].y = y; }
+                    }
+                }
+            });
+            document.addEventListener('mouseup', () => { if(draggedElement) { draggedElement = null; draggedData = null; render(); } });
+        }
+
+        function startDrag(e, element, type, circuitId, index, id) { if(isSimulation) return; e.stopPropagation(); draggedElement = element; draggedData = { type, circuitId, index, id }; }
+
+        function render() {
+            container.innerHTML = ''; listContainer.innerHTML = ''; selectCajaInt.innerHTML = '';
+            let unmappedInts = [];
+
+            circuitos.forEach(c => {
+                c.interruptores.forEach(i => {
+                    const opt = document.createElement('option'); opt.value = i.id; opt.innerText = `${i.id} (Circuito ${c.num})`;
+                    selectCajaInt.appendChild(opt);
+                    unmappedInts.push({ intr: i, circ: c });
+                });
+            });
+
+            // 1. DIBUJAR LUCES
+            circuitos.forEach(circ => {
+                const isOn = circ.state;
+                circ.luces.forEach((luz, idx) => {
+                    const div = document.createElement('div');
+                    div.className = `node node-luz-${luz.subtype || 'comun'} ${isOn ? 'on' : ''}`;
+                    div.style.left = `${luz.x}%`; div.style.top = `${luz.y}%`;
+                    div.innerHTML = `<span class="node-label">C${circ.num}-${luz.id}</span>`;
+                    div.onmousedown = (e) => startDrag(e, div, 'luz', circ.id, idx);
+                    div.onclick = () => triggerCircuitClick(circ.id);
+                    div.oncontextmenu = (e) => deleteElement(e, 'luz', circ.id, idx, luz.id);
+                    container.appendChild(div);
+                });
+            });
+
+            // 2. DIBUJAR CAJAS VERTICALES UNIFICADAS
+            cajasUnificadas.forEach(box => {
+                const div = document.createElement('div');
+                div.className = 'node node-caja-unificada';
+                div.style.left = `${box.x}%`; div.style.top = `${box.y}%`;
+                
+                let labelText = "";
+                box.interruptorIds.forEach(id => {
+                    const target = unmappedInts.find(item => item.intr.id === id);
+                    if(target) {
+                        labelText += (labelText ? "+" : "") + id;
+                        const tec = document.createElement('div');
+                        tec.className = `modulo-tecla ${target.circ.state ? 'on' : ''}`;
+                        tec.onclick = (e) => { e.stopPropagation(); triggerCircuitClick(target.circ.id); };
+                        div.appendChild(tec);
+                        unmappedInts = unmappedInts.filter(item => item.intr.id !== id);
+                    }
+                });
+
+                div.innerHTML += `<span class="node-label">${labelText}</span>`;
+                div.onmousedown = (e) => startDrag(e, div, 'box', null, null, box.id);
+                // Click derecho para desarmar la caja
+                div.oncontextmenu = (e) => desarmarCaja(e, box.id);
+
+                container.appendChild(div);
+            });
+
+            // 3. DIBUJAR INTERRUPTORES SUELTOS
+            unmappedInts.forEach(item => {
+                const i = item.intr; const circ = item.circ;
+                const idx = circ.interruptores.indexOf(i);
+                const div = document.createElement('div');
+                div.className = `node node-interruptor ${circ.state ? 'on' : ''}`;
+                div.style.left = `${i.x}%`; div.style.top = `${i.y}%`;
+                div.innerHTML = `<span class="node-label">${i.id}</span>`;
+                div.onmousedown = (e) => startDrag(e, div, 'int', circ.id, idx);
+                div.onclick = () => triggerCircuitClick(circ.id);
+                div.oncontextmenu = (e) => deleteElement(e, 'int', circ.id, idx, i.id);
+                container.appendChild(div);
+            });
+
+            // 4. PANEL LATERAL
+            circuitos.forEach(circ => {
+                const totalLuces = circ.luces.length; const totalInts = circ.interruptores.length;
+                const row = document.createElement('div'); row.className = 'item-row';
+                row.innerHTML = `
+                    <div><strong>[C${circ.num}] ${circ.name}</strong><div style="font-size:10px; color:#7f8c8d; margin-top:2px;">💡 ${totalLuces} lum. | 🎛️ ${totalInts} llaves</div></div>
+                    <label class="switch-toggle"><input type="checkbox" ${!isSimulation ? 'disabled' : ''} ${circ.state ? 'checked' : ''} onchange="handleCircuitToggle('${circ.id}', this.checked)"><span class="slider"></span></label>
+                `;
+                listContainer.appendChild(row);
+            });
+        }
+
+        function exportarProyecto() {
+            const proyecto = { countLuz, countInt, circuitos, cajasUnificadas };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(proyecto, null, 2));
+            const dl = document.createElement('a'); dl.setAttribute("href", dataStr);
+            dl.setAttribute("download", `Plano_Electrico_LasMoras_Pro.json`);
+            dl.click(); dl.remove();
+        }
+
+        function importarProyecto(e) {
+            const file = e.target.files[0]; if (!file) return;
+            const r = new FileReader();
+            r.onload = function(evt) {
+                try {
+                    const data = JSON.parse(evt.target.result);
+                    if (data && data.circuitos) {
+                        countLuz = data.countLuz || 1; countInt = data.countInt || 1;
+                        circuitos = data.circuitos.map(c => ({...c, state: false}));
+                        cajasUnificadas = data.cajasUnificadas || [];
+                        if(circuitos.length > 0) selectedCircuitId = circuitos[0].id;
+                        rebuildSelectMenu(); render(); alert("¡Proyecto avanzado cargado perfectamente!");
+                    }
+                } catch(err) { alert("Error al leer el archivo JSON."); }
+            }; r.readAsText(file); e.target.value = '';
+        }
+    </script>
+</body>
+</html>
